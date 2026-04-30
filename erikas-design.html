@@ -334,13 +334,13 @@ html,body{height:100%;overflow:hidden;background:var(--cream);font-family:'Georg
         <div class="card-hdr"><span class="card-hdr-line"></span>Asistente de negocio</div>
         <div class="chat-outer">
           <div class="chat-msgs" id="chat-msgs">
-            <div class="msg bot">¡Hola Erika! Soy tu asistente. Consulta sobre tu inventario, pedidos, clientes o finanzas de forma natural.</div>
+            <div class="msg bot">¡Hola Erika! Soy tu asistente impulsada por Gemini. Consulta sobre tu inventario, pedidos, clientes o finanzas de forma natural.</div>
           </div>
           <div class="chat-tips">
             <span class="chat-tip" onclick="setq('¿Me queda papel crepé azul?')">¿Hay papel crepé?</span>
             <span class="chat-tip" onclick="setq('¿Qué materiales están por agotarse?')">Stock bajo</span>
             <span class="chat-tip" onclick="setq('¿Cuánto gané este mes?')">Ganancias del mes</span>
-            <span class="chat-tip" onclick="setq('¿Qué pedidos tengo pendientes?')">Pedidos activos</span>
+            <span class="chat-tip" onclick="setq('Dame una idea de manualidad con lo que tenemos en stock')">Idea de manualidad</span>
           </div>
           <div class="chat-bar">
             <input type="text" id="chat-inp" placeholder="Escribe tu consulta..." onkeydown="if(event.key==='Enter')enviar()"/>
@@ -746,14 +746,17 @@ function renderFinanzas(){
     </div>`).join('');
 }
 
-// ── IA (Claude API) ──
+// ── IA (Gemini API) ──
+const GEMINI_API_KEY = 'TU_NUEVA_API_KEY_AQUI'; 
+
 let chatHistory = [];
 
 async function enviar(){
   const inp=document.getElementById('chat-inp');
   const q=inp.value.trim();if(!q)return;inp.value='';
   const msgs=document.getElementById('chat-msgs');
-  chatHistory.push({role:'user',content:q});
+  
+  chatHistory.push({role:'user', parts:[{text: q}]});
   msgs.innerHTML+=`<div class="msg user">${q}</div>`;
   const lid='l'+Date.now();
   msgs.innerHTML+=`<div class="msg bot" id="${lid}"><div class="dot-anim"><span></span><span></span><span></span></div></div>`;
@@ -777,7 +780,7 @@ async function enviar(){
 
   const txRec=DB.tx.slice(-12).map(t=>`- ${t.fecha}: ${t.tipo==='ingreso'?'+':'-'}S/${t.monto.toFixed(2)} — ${t.descripcion}`).join('\n')||'Sin movimientos.';
 
-  const sistema=`Eres la asistente inteligente de "Erika's Design", un negocio peruano de papelería creativa, manualidades y decoraciones personalizadas ubicado en Lima. La dueña es Erika. Responde SIEMPRE en español, con tono amable, cálido y profesional. Sé directa y concisa (máximo 4 oraciones). Usa "soles" o "S/" para precios.
+  const sistema=`Eres la asistente inteligente de "Erika's Design", un negocio de papelería creativa, maquetas personalizadas y decoraciones ubicado en Pachacamac, Lima. La dueña es Erika. Responde SIEMPRE en español, con tono amable, cálido y profesional. Sé directa y concisa (máximo 4 oraciones). Usa "soles" o "S/" para precios.
 
 INVENTARIO ACTUAL (datos reales del sistema):
 ${inv}
@@ -796,34 +799,50 @@ FINANZAS — Mes actual (${mes}):
 Últimos movimientos financieros:
 ${txRec}
 
-INSTRUCCIONES IMPORTANTES:
-- Si preguntan por un material específico, dí EXACTAMENTE cuánto hay y si el stock está bajo.
-- Si preguntan por pedidos, menciona estado actual y fecha de entrega.
-- Si el stock está bajo, recomienda reponer.
-- Para preguntas de negocio o estrategia, da consejos prácticos basados en los datos reales.
-- Nunca inventes datos que no estén en el sistema.`;
+REGLAS OBLIGATORIAS E INQUEBRANTABLES:
+1. NO INVENTES NADA: Si Erika te pide una idea de diseño o manualidad, GÉNERALA USANDO EXCLUSIVAMENTE los materiales que aparecen en el "INVENTARIO ACTUAL". 
+2. Si un material es absolutamente necesario para una idea y no está en stock, ponlo en una sección al final que diga "Sugerencia de compra externa (Considerar costo logístico)".
+3. Si preguntan por un material específico, dí EXACTAMENTE la cantidad que hay registrada y avisa si el stock está bajo.
+4. Si preguntan por pedidos, cruza la información con los "CLIENTES REGISTRADOS" y menciona el estado actual y fecha de entrega.
+5. Para preguntas de negocio, da consejos prácticos protegiendo siempre el margen de ganancia real.`;
 
   try{
-    const r=await fetch('https://api.anthropic.com/v1/messages',{
+    if(GEMINI_API_KEY === 'AIzaSyCKGXMoxC2vGmuLp_VLdwWNjlK95lnRKvc') throw new Error("Falta API Key");
+
+    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + GEMINI_API_KEY,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:1000,
-        system:sistema,
-        messages:chatHistory
+        systemInstruction: {
+          parts: [{text: sistema}]
+        },
+        contents: chatHistory
       })
     });
+
     if(!r.ok){throw new Error('HTTP '+r.status)}
     const d=await r.json();
-    const txt=d.content?.map(c=>c.text||'').join('')||'No pude procesar la respuesta.';
-    chatHistory.push({role:'assistant',content:txt});
-    if(chatHistory.length>20)chatHistory=chatHistory.slice(-20);
-    document.getElementById(lid).textContent=txt;
+    
+    let txt = 'No pude procesar la respuesta.';
+    if (d.candidates && d.candidates[0].content && d.candidates[0].content.parts) {
+        txt = d.candidates[0].content.parts[0].text;
+    }
+
+    chatHistory.push({role:'model', parts:[{text: txt}]});
+    if(chatHistory.length>20) chatHistory = chatHistory.slice(-20);
+    
+    let htmlTxt = txt.replace(/\n/g, '<br>');
+    htmlTxt = htmlTxt.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    
+    document.getElementById(lid).innerHTML = htmlTxt;
+
   }catch(e){
-    const errMsg='Error de conexión. Verifica que tengas internet e intenta de nuevo.';
+    console.error(e);
+    const errMsg= e.message === "Falta API Key" 
+      ? 'Error: Por favor coloca tu API Key de Gemini en el código fuente.' 
+      : 'Error de conexión con la IA. Revisa tu internet o la cuota de tu API Key.';
     document.getElementById(lid).textContent=errMsg;
-    chatHistory.pop();
+    chatHistory.pop(); 
   }
   msgs.scrollTop=msgs.scrollHeight;
 }
