@@ -807,6 +807,833 @@ REGLAS OBLIGATORIAS E INQUEBRANTABLES:
 5. Para preguntas de negocio, da consejos prácticos protegiendo siempre el margen de ganancia real.`;
 
   try{
+    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + GEMINI_API_KEY,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        systemInstruction: {
+          parts: [{text: sistema}]
+        },
+        contents: chatHistory
+      })
+    });
+
+    if(!r.ok){
+      const errorData = await r.json();
+      throw new Error(errorData.error.message || 'Error HTTP ' + r.status);
+    }
+    
+    const d=await r.json();
+    
+    let txt = 'No pude procesar la respuesta.';
+    if (d.candidates && d.candidates[0].content && d.candidates[0].content.parts) {
+        txt = d.candidates[0].content.parts[0].text;
+    }
+
+    chatHistory.push({role:'model', parts:[{text: txt}]});
+    if(chatHistory.length>20) chatHistory = chatHistory.slice(-20);
+    
+    let htmlTxt = txt.replace(/\n/g, '<br>');
+    htmlTxt = htmlTxt.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    
+    document.getElementById(lid).innerHTML = htmlTxt;
+
+  }catch(e){
+    console.error(e);
+    document.getElementById(lid).innerHTML = `<span style="color:#A32D2D; font-weight:bold;">Error detallado:</span> ${e.message}`;
+    chatHistory.pop(); 
+  }
+  msgs.scrollTop=msgs.scrollHeight;
+}
+
+function setq(t){
+  document.getElementById('chat-inp').value=t;
+  nav('ia',document.querySelectorAll('.nav-item')[5]);
+}
+
+// ── INIT ──
+document.getElementById('tx-fecha').value=new Date().toISOString().slice(0,10);
+document.getElementById('p-entrega').value=new Date().toISOString().slice(0,10);
+renderInicio();
+
+// Close modals on overlay click
+document.getElementById('confirm-overlay').addEventListener('click',function(e){if(e.target===this)closeConfirm()});
+document.getElementById('edit-overlay').addEventListener('click',function(e){if(e.target===this)closeEdit()});
+</script>
+</body>
+</html>  display:flex;background:var(--white);border-top:1px solid var(--border);
+  flex-shrink:0;padding-bottom:env(safe-area-inset-bottom);
+}
+.nav-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:8px 4px 6px;cursor:pointer;color:var(--ink-light);font-size:10px;
+  letter-spacing:.4px;gap:3px;border:none;background:none;font-family:'Georgia',serif;
+  transition:color .15s;
+}
+.nav-item svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.nav-item.active{color:var(--rose)}
+.nav-item.active svg{stroke:var(--rose)}
+
+/* SECTIONS */
+.section{display:none}.section.active{display:block}
+
+/* CARDS */
+.card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:14px 15px;margin-bottom:12px;box-shadow:var(--card-shadow)}
+.card-hdr{font-size:13px;font-weight:700;color:var(--rose-dark);margin-bottom:12px;display:flex;align-items:center;gap:7px;letter-spacing:.3px}
+.card-hdr-line{width:3px;height:15px;background:var(--rose);border-radius:2px;flex-shrink:0}
+
+/* STATS GRID */
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.stat-box{background:var(--rose-light);border:1px solid var(--rose-mid);border-radius:var(--radius-sm);padding:10px 8px;text-align:center}
+.stat-lbl{font-size:10px;color:var(--ink-mid);letter-spacing:.5px;text-transform:uppercase;margin-bottom:3px}
+.stat-val{font-size:19px;font-weight:700;line-height:1.1}
+.v-green{color:var(--sage)}.v-rose{color:var(--rose-dark)}.v-ink{color:var(--ink)}
+
+/* FORMS */
+.field{margin-bottom:9px}
+.field label{display:block;font-size:11px;color:var(--ink-mid);margin-bottom:4px;letter-spacing:.4px;text-transform:uppercase}
+.field input,.field select,.field textarea{
+  width:100%;padding:10px 12px;font-size:14px;font-family:'Georgia',serif;
+  border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--cream);
+  color:var(--ink);appearance:none;-webkit-appearance:none;outline:none;
+}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--rose)}
+.field textarea{resize:none;height:70px;line-height:1.5}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+
+/* BUTTONS */
+.btn-primary{
+  width:100%;padding:12px;background:var(--rose);border:none;border-radius:var(--radius-sm);
+  color:white;font-size:14px;font-weight:700;font-family:'Georgia',serif;cursor:pointer;
+  letter-spacing:.3px;transition:background .15s;margin-top:4px;
+}
+.btn-primary:active{background:var(--rose-btn)}
+.btn-sm{
+  padding:5px 12px;border:1.5px solid var(--border);border-radius:20px;background:var(--white);
+  color:var(--ink-mid);font-size:12px;font-family:'Georgia',serif;cursor:pointer;
+}
+.btn-sm:active{background:var(--rose-light)}
+.btn-icon{background:none;border:none;color:var(--ink-light);font-size:20px;cursor:pointer;padding:2px 6px;line-height:1}
+.btn-icon:active{color:var(--rose-dark)}
+
+/* LIST ITEMS */
+.list-wrap{display:flex;flex-direction:column;gap:8px;max-height:340px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.list-item{
+  background:var(--cream);border:1px solid var(--border);border-radius:var(--radius-sm);
+  padding:10px 12px;display:flex;align-items:flex-start;gap:8px;
+}
+.li-body{flex:1;min-width:0}
+.li-name{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:2px}
+.li-sub{font-size:11px;color:var(--ink-mid);line-height:1.4}
+.li-actions{display:flex;align-items:center;gap:6px;flex-shrink:0}
+
+/* BADGES */
+.badge{font-size:10px;padding:2px 8px;border-radius:10px;font-family:sans-serif;letter-spacing:.3px;white-space:nowrap;font-weight:600}
+.b-rose{background:var(--rose-light);color:var(--rose-dark);border:1px solid var(--rose-mid)}
+.b-green{background:var(--sage-light);color:var(--sage);border:1px solid #9FE1CB}
+.b-amber{background:#FAEEDA;color:#854F0B;border:1px solid #FAC775}
+.b-red{background:#FCEBEB;color:#A32D2D;border:1px solid #F09595}
+.b-gray{background:#F1EFE8;color:#5F5E5A;border:1px solid #D3D1C7}
+.b-blue{background:#E6F1FB;color:#185FA5;border:1px solid #B5D4F4}
+
+/* PIPELINE */
+.pipeline{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;-webkit-overflow-scrolling:touch}
+.pipe-col{flex:0 0 140px;background:var(--rose-light);border-radius:var(--radius-sm);padding:8px}
+.pipe-col-hdr{font-size:10px;font-weight:700;color:var(--rose-dark);text-align:center;margin-bottom:6px;letter-spacing:.5px;text-transform:uppercase}
+.pipe-card{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:8px 9px;margin-bottom:6px;cursor:pointer}
+.pipe-card:active{border-color:var(--rose)}
+.pc-name{font-size:12px;font-weight:700;color:var(--ink);margin-bottom:2px}
+.pc-det{font-size:11px;color:var(--ink-mid)}
+.pipe-empty{font-size:11px;color:var(--ink-light);text-align:center;font-style:italic}
+
+/* AVATAR */
+.avatar{width:38px;height:38px;border-radius:50%;background:var(--rose-light);border:1.5px solid var(--rose-mid);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:var(--rose-dark);flex-shrink:0}
+
+/* STOCK CONTROLS */
+.stock-ctrl{display:flex;align-items:center;gap:6px}
+.stock-btn{width:28px;height:28px;border-radius:50%;border:1.5px solid var(--border);background:var(--white);font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-mid);flex-shrink:0}
+.stock-btn:active{background:var(--rose-light);border-color:var(--rose);color:var(--rose-dark)}
+.stock-val{font-size:14px;font-weight:700;min-width:60px;text-align:center}
+
+/* CHAT */
+.chat-outer{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;background:var(--white)}
+.chat-msgs{padding:12px;min-height:220px;max-height:350px;overflow-y:auto;display:flex;flex-direction:column;gap:9px;-webkit-overflow-scrolling:touch}
+.msg{padding:10px 14px;border-radius:14px;font-size:13px;line-height:1.6;font-family:'Georgia',serif}
+.msg.bot{background:var(--rose-light);color:var(--rose-dark);align-self:flex-start;border-bottom-left-radius:3px;max-width:88%}
+.msg.user{background:var(--cream);border:1px solid var(--border);color:var(--ink);align-self:flex-end;border-bottom-right-radius:3px;max-width:88%}
+.chat-bar{display:flex;gap:8px;padding:10px;border-top:1px solid var(--border);background:var(--cream)}
+.chat-bar input{flex:1;padding:10px 12px;font-size:13px;font-family:'Georgia',serif;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--white);color:var(--ink);outline:none}
+.chat-bar input:focus{border-color:var(--rose)}
+.chat-bar button{flex-shrink:0;padding:10px 16px;background:var(--rose);border:none;border-radius:var(--radius-sm);color:white;font-family:'Georgia',serif;font-weight:700;font-size:13px;cursor:pointer}
+.chat-bar button:active{background:var(--rose-btn)}
+.dot-anim{display:inline-flex;gap:4px;align-items:center;padding:2px 0}
+.dot-anim span{width:6px;height:6px;border-radius:50%;background:var(--rose);opacity:.4;animation:da 1.2s infinite}
+.dot-anim span:nth-child(2){animation-delay:.25s}
+.dot-anim span:nth-child(3){animation-delay:.5s}
+@keyframes da{0%,80%,100%{opacity:.4}40%{opacity:1}}
+.chat-tips{display:flex;flex-wrap:wrap;gap:6px;padding:10px;border-top:1px solid var(--border)}
+.chat-tip{font-size:12px;padding:5px 12px;border:1px solid var(--rose-mid);border-radius:15px;background:var(--rose-light);color:var(--rose-dark);cursor:pointer;font-family:'Georgia',serif}
+.chat-tip:active{background:var(--rose-mid)}
+
+/* EMPTY STATE */
+.empty{text-align:center;padding:24px 16px;color:var(--ink-light);font-size:13px;font-style:italic}
+
+/* DATE BADGE */
+.date-chip{font-size:10px;background:var(--sage-light);color:var(--sage);border:1px solid #9FE1CB;border-radius:8px;padding:2px 7px;white-space:nowrap;font-family:sans-serif;font-weight:600}
+
+/* TOAST */
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--ink);color:white;padding:10px 20px;border-radius:20px;font-size:13px;font-family:sans-serif;z-index:9999;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+
+/* CONFIRM MODAL */
+.overlay{position:fixed;inset:0;background:rgba(44,36,32,.45);z-index:8888;display:none;align-items:flex-end;justify-content:center}
+.overlay.open{display:flex}
+.modal-box{background:var(--white);border-radius:var(--radius) var(--radius) 0 0;padding:20px;width:100%;max-width:480px;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+.modal-title{font-size:15px;font-weight:700;margin-bottom:8px;color:var(--ink)}
+.modal-msg{font-size:13px;color:var(--ink-mid);margin-bottom:18px;line-height:1.5}
+.modal-btns{display:flex;gap:10px}
+.modal-btns button{flex:1;padding:12px;border-radius:var(--radius-sm);font-size:14px;font-family:'Georgia',serif;font-weight:700;border:none;cursor:pointer}
+.modal-cancel{background:var(--cream);color:var(--ink-mid)}
+.modal-confirm{background:#E24B4A;color:white}
+
+/* EDIT STOCK MODAL */
+.edit-stock-box{background:var(--white);border-radius:var(--radius);padding:20px;width:90%;max-width:320px;margin:auto}
+.edit-overlay{position:fixed;inset:0;background:rgba(44,36,32,.45);z-index:8888;display:none;align-items:center;justify-content:center}
+.edit-overlay.open{display:flex}
+.edit-stock-box input{width:100%;padding:10px 12px;font-size:18px;font-family:'Georgia',serif;border:1.5px solid var(--border);border-radius:var(--radius-sm);text-align:center;margin:12px 0;outline:none;color:var(--ink)}
+.edit-stock-box input:focus{border-color:var(--rose)}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <div class="top-logo">
+      <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M20 5 C20 5,24 13,20 20 C16 13,20 5,20 5Z" fill="#E8637A" opacity=".9"/>
+        <path d="M20 20 C20 20,30 17,32 24 C25 27,20 20,20 20Z" fill="#4A7A5C" opacity=".85"/>
+        <path d="M20 20 C20 20,10 17,8 24 C15 27,20 20,20 20Z" fill="#4A7A5C" opacity=".85"/>
+        <circle cx="20" cy="20" r="3.5" fill="#E8637A"/>
+        <path d="M13 33 Q20 27 27 33" stroke="#E8637A" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div>
+      <div class="top-title">Erika's Design</div>
+      <div class="top-sub">Gestión de negocio</div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div id="content">
+
+    <!-- INICIO -->
+    <div id="s-inicio" class="section active">
+      <div class="stats-grid">
+        <div class="stat-box"><div class="stat-lbl">Pedidos activos</div><div class="stat-val v-ink" id="d-pedidos">0</div></div>
+        <div class="stat-box"><div class="stat-lbl">Ingresos mes</div><div class="stat-val v-green" id="d-ingresos">S/ 0</div></div>
+        <div class="stat-box"><div class="stat-lbl">Clientes</div><div class="stat-val v-rose" id="d-clientes">0</div></div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><span class="card-hdr-line"></span>Fechas especiales de clientes</div>
+        <div id="d-fechas" class="list-wrap"></div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><span class="card-hdr-line"></span>Pedidos en producción</div>
+        <div class="pipeline" id="d-pipeline"></div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><span class="card-hdr-line"></span>Materiales con stock bajo</div>
+        <div id="d-stockbajo" class="list-wrap"></div>
+      </div>
+    </div>
+
+    <!-- INVENTARIO -->
+    <div id="s-inventario" class="section">
+      <div class="card">
+        <div class="card-hdr"><span class="card-hdr-line"></span>Agregar material</div>
+        <div class="field"><label>Nombre del material</label><input type="text" id="i-nombre" placeholder="Ej: Papel crepé azul"/></div>
+        <div class="row2">
+          <div class="field"><label>Categoría</label>
+            <select id="i-cat">
+              <option>Papel / Cartulina</option><option>Vinilo</option><option>Tela / Cinta</option>
+              <option>Flores / Deco</option><option>Pegamento / Silicona</option>
+              <option>Empaque</option><option>Alambre / Estructura</option><option>Pintura</option><option>Otro</option>
+            </select>
+          </div>
+          <div class="field"><label>Unidad</label><input type="text" id="i-unidad" placeholder="metros, rollos…"/></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>Cantidad actual</label><input type="number" id="i-qty" placeholder="0" min="0" step="0.5"/></div>
+          <div class="field"><label>Stock mínimo</label><input type="number" id="i-min" placeholder="0" min="0" step="0.5"/></div>
+        </div>
+        <div class="field"><label>Precio unitario (S/)</label><input type="number" id="i-precio" placeholder="0.00" min="0" step="0.01"/></div>
+        <button class="btn-primary" onclick="agregarMaterial()">Guardar material</button>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><span class="card-hdr-line"></span>Mis materiales</div>
+        <div class="field"><input type="text" id="i-buscar" placeholder="Buscar material..." oninput="renderInventario()"/></div>
+        <div class="list-wrap" id="inv-list"></div>
+      </div>
+    </div>
+
+    <!-- PEDIDOS -->
+    <div id="s-pedidos" class="section">
+      <div class="card">
+        <div class="card-hdr"><span class="card-hdr-line"></span>Nuevo pedido</div>
+        <div class="field"><label>Cliente</label><select id="p-cliente"><option value="">-- Seleccionar --</option></select></div>
+        <div class="field"><label>Descripción del producto</label><input type="text" id="p-prod" placeholder="Ej: 30 invitaciones de graduación"/></div>
+        <div class="row2">
+          <div class="field"><label>Valor (S/)</label><input type="number" id="p-monto" placeholder="0" min="0" step="0.50"/></div>
+          <div class="field"><label>Fecha de entrega</label><input type="date" id="p-entrega"/></div>
+        </div>
+        <div class="field"><label>Estado inicial</label>
+          <select id="p-estado">
+            <option>Diseño</option><option>Corte</option><option>Ensamblado</option><option>Empacado</option><option>Listo</option>
+          </select>
+        </div>
+        <div class="field"><label>Notas (colores, medidas…)</label><textarea id="p-notas" placeholder="Detalles especiales del pedido..."></textarea></div>
+        <button class="btn-primary" onclick="agregarPedido()">Registrar pedido</button>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><span class="card-hdr-line"></span>Pipeline (toca para avanzar)</div>
+        <div class="pipeline" id="p-pipeline"></div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><span class="card-hdr-line"></span>Todos los pedidos</div>
+        <div class="list-wrap" id="p-list"></div>
+      </div>
+    </div>
+
+    <!-- CLIENTES -->
+    <div id="s-clientes" class="section">
+      <div class="card">
+        <div class="card-hdr"><span class="card-hdr-line"></span>Nuevo cliente</div>
+        <div class="field"><label>Nombre completo</label><input type="text" id="c-nombre" placeholder="Ej: María Torres"/></div>
+        <div class="row2">
+          <div class="field"><label>Tipo</label>
+            <select id="c-tipo">
+              <option>Familia</option><option>Profesor</option><option>Institución</option><option>Empresa</option><option>Particular</option>
+            </select>
+          </div>
+          <div class="field"><label>Distrito</label><input type="text" id="c-dist" placeholder="Miraflores…"/></div>
+        </div>
+        <div class="field"><label>WhatsApp / Teléfono</label><input type="tel" id="c-tel" placeholder="+51 999 000 111"/></div>
+        <div class="field"><label>Fecha especial (para recordatorios)</label><input type="text" id="c-fecha" placeholder="Ej: 15 oct — Cumpleaños hija"/></div>
+        <div class="field"><label>Instagram / Red social</label><input type="text" id="c-ig" placeholder="@usuario"/></div>
+        <button class="btn-primary" onclick="agregarCliente()">Guardar cliente</button>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><span class="card-hdr-line"></span>Base de clientes</div>
+        <div class="field"><input type="text" id="c-buscar" placeholder="Buscar cliente o distrito..." oninput="renderClientes()"/></div>
+        <div class="list-wrap" id="c-list"></div>
+      </div>
+    </div>
+
+    <!-- FINANZAS -->
+    <div id="s-finanzas" class="section">
+      <div class="stats-grid">
+        <div class="stat-box"><div class="stat-lbl">Ingresos</div><div class="stat-val v-green" id="f-ing">S/ 0</div></div>
+        <div class="stat-box"><div class="stat-lbl">Egresos</div><div class="stat-val v-rose" id="f-egr">S/ 0</div></div>
+        <div class="stat-box"><div class="stat-lbl">Ganancia</div><div class="stat-val v-ink" id="f-gan">S/ 0</div></div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><span class="card-hdr-line"></span>Registrar movimiento</div>
+        <div class="row2">
+          <div class="field"><label>Tipo</label>
+            <select id="tx-tipo"><option value="ingreso">Ingreso</option><option value="egreso">Egreso</option></select>
+          </div>
+          <div class="field"><label>Monto (S/)</label><input type="number" id="tx-monto" placeholder="0.00" min="0" step="0.01"/></div>
+        </div>
+        <div class="field"><label>Descripción</label><input type="text" id="tx-desc" placeholder="Ej: Venta arreglo floral"/></div>
+        <div class="field"><label>Fecha</label><input type="date" id="tx-fecha"/></div>
+        <button class="btn-primary" onclick="agregarTx()">Registrar</button>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><span class="card-hdr-line"></span>Movimientos del mes</div>
+        <div class="list-wrap" id="tx-list"></div>
+      </div>
+    </div>
+
+    <!-- IA -->
+    <div id="s-ia" class="section">
+      <div class="card">
+        <div class="card-hdr"><span class="card-hdr-line"></span>Asistente de negocio</div>
+        <div class="chat-outer">
+          <div class="chat-msgs" id="chat-msgs">
+            <div class="msg bot">¡Hola Erika! Soy tu asistente impulsada por Gemini. Consulta sobre tu inventario, pedidos, clientes o finanzas de forma natural.</div>
+          </div>
+          <div class="chat-tips">
+            <span class="chat-tip" onclick="setq('¿Me queda papel crepé azul?')">¿Hay papel crepé?</span>
+            <span class="chat-tip" onclick="setq('¿Qué materiales están por agotarse?')">Stock bajo</span>
+            <span class="chat-tip" onclick="setq('¿Cuánto gané este mes?')">Ganancias del mes</span>
+            <span class="chat-tip" onclick="setq('Dame una idea de manualidad con lo que tenemos en stock')">Idea de manualidad</span>
+          </div>
+          <div class="chat-bar">
+            <input type="text" id="chat-inp" placeholder="Escribe tu consulta..." onkeydown="if(event.key==='Enter')enviar()"/>
+            <button onclick="enviar()">Enviar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" onclick="nav('inicio',this)">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Inicio
+    </button>
+    <button class="nav-item" onclick="nav('inventario',this)">
+      <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+      Inventario
+    </button>
+    <button class="nav-item" onclick="nav('pedidos',this)">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      Pedidos
+    </button>
+    <button class="nav-item" onclick="nav('clientes',this)">
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+      Clientes
+    </button>
+    <button class="nav-item" onclick="nav('finanzas',this)">
+      <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+      Finanzas
+    </button>
+    <button class="nav-item" onclick="nav('ia',this)">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      IA
+    </button>
+  </nav>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- CONFIRM MODAL -->
+<div class="overlay" id="confirm-overlay">
+  <div class="modal-box">
+    <div class="modal-title" id="confirm-title">¿Eliminar?</div>
+    <div class="modal-msg" id="confirm-msg">Esta acción no se puede deshacer.</div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeConfirm()">Cancelar</button>
+      <button class="modal-confirm" id="confirm-ok">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT STOCK MODAL -->
+<div class="edit-overlay" id="edit-overlay">
+  <div class="edit-stock-box">
+    <div class="modal-title" id="edit-title">Editar cantidad</div>
+    <input type="number" id="edit-qty-input" min="0" step="0.5"/>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeEdit()">Cancelar</button>
+      <button class="modal-confirm" style="background:var(--rose)" onclick="saveEdit()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── STORAGE ──
+const LS = {
+  get(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null}catch(e){return null}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){toast('Error al guardar datos')}}
+};
+
+// ── DATA ──
+const DB = {
+  inventario: LS.get('ed3_inv') || [
+    {id:1,nombre:'Papel crepé azul',cat:'Papel / Cartulina',qty:15,unidad:'metros',min:5,precio:2.50},
+    {id:2,nombre:'Papel crepé rojo',cat:'Papel / Cartulina',qty:8,unidad:'metros',min:5,precio:2.50},
+    {id:3,nombre:'Cinta dorada',cat:'Tela / Cinta',qty:3,unidad:'rollos',min:4,precio:5.00},
+    {id:4,nombre:'Vinilo transparente A4',cat:'Vinilo',qty:25,unidad:'hojas',min:10,precio:1.20},
+    {id:5,nombre:'Silicona en barra',cat:'Pegamento / Silicona',qty:2,unidad:'unidades',min:5,precio:0.80},
+    {id:6,nombre:'Flores artificiales rosas',cat:'Flores / Deco',qty:60,unidad:'unidades',min:20,precio:0.50},
+  ],
+  pedidos: LS.get('ed3_ped') || [],
+  clientes: LS.get('ed3_cli') || [
+    {id:1,nombre:'María Torres',tipo:'Familia',tel:'999-111-222',dist:'Miraflores',fecha:'15 oct — Cumpleaños hija',ig:''},
+    {id:2,nombre:'Colegio San Martín',tipo:'Institución',tel:'999-333-444',dist:'San Isidro',fecha:'6 jul — Día del Maestro',ig:''},
+  ],
+  tx: LS.get('ed3_tx') || [],
+};
+let nxtId = Math.max(9, ...DB.inventario.map(x=>x.id), ...DB.pedidos.map(x=>x.id), ...DB.clientes.map(x=>x.id), ...DB.tx.map(x=>x.id)) + 1;
+
+function save(key, data){ LS.set(key, data) }
+function saveAll(){ save('ed3_inv',DB.inventario);save('ed3_ped',DB.pedidos);save('ed3_cli',DB.clientes);save('ed3_tx',DB.tx) }
+
+// ── TOAST ──
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2500);
+}
+
+// ── NAVIGATION ──
+function nav(sec, btn){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById('s-'+sec).classList.add('active');
+  btn.classList.add('active');
+  if(sec==='inicio') renderInicio();
+  if(sec==='inventario') renderInventario();
+  if(sec==='pedidos'){poblarClientes();renderPipeline();renderPedidos()}
+  if(sec==='clientes') renderClientes();
+  if(sec==='finanzas') renderFinanzas();
+}
+
+// ── CONFIRM MODAL ──
+let confirmCb = null;
+function confirm2(title, msg, cb){
+  document.getElementById('confirm-title').textContent=title;
+  document.getElementById('confirm-msg').textContent=msg;
+  document.getElementById('confirm-ok').onclick=()=>{cb();closeConfirm()};
+  document.getElementById('confirm-overlay').classList.add('open');
+  confirmCb=cb;
+}
+function closeConfirm(){document.getElementById('confirm-overlay').classList.remove('open')}
+
+// ── EDIT STOCK MODAL ──
+let editTarget = null;
+function openEdit(id){
+  const item=DB.inventario.find(x=>x.id===id);if(!item)return;
+  editTarget=id;
+  document.getElementById('edit-title').textContent=item.nombre;
+  document.getElementById('edit-qty-input').value=item.qty;
+  document.getElementById('edit-overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('edit-qty-input').select(),100);
+}
+function closeEdit(){document.getElementById('edit-overlay').classList.remove('open');editTarget=null}
+function saveEdit(){
+  if(!editTarget)return;
+  const item=DB.inventario.find(x=>x.id===editTarget);if(!item)return;
+  const v=parseFloat(document.getElementById('edit-qty-input').value);
+  if(isNaN(v)||v<0){toast('Cantidad inválida');return}
+  item.qty=v;save('ed3_inv',DB.inventario);
+  closeEdit();renderInventario();renderInicio();toast('Stock actualizado');
+}
+
+// ── INICIO ──
+function renderInicio(){
+  const activos=DB.pedidos.filter(p=>p.estado!=='Entregado');
+  document.getElementById('d-pedidos').textContent=activos.length;
+  document.getElementById('d-clientes').textContent=DB.clientes.length;
+  const mes=curMes();
+  const ing=DB.tx.filter(t=>t.fecha.startsWith(mes)&&t.tipo==='ingreso').reduce((a,t)=>a+t.monto,0);
+  document.getElementById('d-ingresos').textContent='S/ '+ing.toFixed(2);
+
+  // Fechas especiales
+  const fl=document.getElementById('d-fechas');
+  const conf=DB.clientes.filter(c=>c.fecha);
+  fl.innerHTML=conf.length?conf.map(c=>`
+    <div class="list-item">
+      <div class="li-body"><div class="li-name">${c.nombre}</div><div class="li-sub">${c.tipo}${c.dist?' · '+c.dist:''}</div></div>
+      <span class="date-chip">${c.fecha}</span>
+    </div>`).join(''):'<div class="empty">Sin fechas especiales registradas aún.</div>';
+
+  // Pipeline
+  const pip=document.getElementById('d-pipeline');
+  pip.innerHTML=renderPipeHTML(activos);
+
+  // Stock bajo
+  const bajo=DB.inventario.filter(i=>i.qty<=i.min);
+  const sb=document.getElementById('d-stockbajo');
+  sb.innerHTML=bajo.length?bajo.map(i=>`
+    <div class="list-item">
+      <div class="li-body"><div class="li-name">${i.nombre}</div><div class="li-sub">${i.cat}</div></div>
+      <span class="badge b-red">${i.qty} ${i.unidad}</span>
+    </div>`).join(''):'<div class="empty">Todo el inventario tiene stock suficiente.</div>';
+}
+
+// ── INVENTARIO ──
+function agregarMaterial(){
+  const n=document.getElementById('i-nombre').value.trim();
+  const u=document.getElementById('i-unidad').value.trim();
+  if(!n){toast('Escribe el nombre del material');return}
+  if(!u){toast('Escribe la unidad de medida');return}
+  const item={
+    id:nxtId++,nombre:n,cat:document.getElementById('i-cat').value,
+    qty:parseFloat(document.getElementById('i-qty').value)||0,
+    unidad:u,min:parseFloat(document.getElementById('i-min').value)||0,
+    precio:parseFloat(document.getElementById('i-precio').value)||0,
+  };
+  DB.inventario.push(item);save('ed3_inv',DB.inventario);
+  ['i-nombre','i-unidad','i-qty','i-min','i-precio'].forEach(id=>document.getElementById(id).value='');
+  renderInventario();toast('Material guardado');
+}
+
+function adjQty(id,d){
+  const i=DB.inventario.find(x=>x.id===id);if(!i)return;
+  i.qty=Math.max(0,parseFloat((i.qty+d).toFixed(2)));
+  save('ed3_inv',DB.inventario);renderInventario();renderInicio();
+}
+
+function eliminarMaterial(id){
+  const i=DB.inventario.find(x=>x.id===id);
+  confirm2('Eliminar material',`¿Eliminar "${i?.nombre}"? No se puede deshacer.`,()=>{
+    DB.inventario=DB.inventario.filter(x=>x.id!==id);
+    save('ed3_inv',DB.inventario);renderInventario();renderInicio();toast('Material eliminado');
+  });
+}
+
+function renderInventario(){
+  const q=(document.getElementById('i-buscar')||{}).value||'';
+  const el=document.getElementById('inv-list');if(!el)return;
+  let items=DB.inventario;
+  if(q)items=items.filter(i=>i.nombre.toLowerCase().includes(q.toLowerCase())||i.cat.toLowerCase().includes(q.toLowerCase()));
+  if(!items.length){el.innerHTML='<div class="empty">No se encontraron materiales.</div>';return}
+  el.innerHTML=items.map(i=>{
+    const bajo=i.qty<=i.min;
+    return`<div class="list-item" style="flex-direction:column;gap:8px">
+      <div style="display:flex;align-items:center;gap:8px;width:100%">
+        <div class="li-body">
+          <div class="li-name">${i.nombre}</div>
+          <div class="li-sub">${i.cat}${i.precio?' · S/'+i.precio.toFixed(2)+' c/u':''}</div>
+        </div>
+        ${bajo?'<span class="badge b-red">Bajo</span>':''}
+        <button class="btn-icon" onclick="eliminarMaterial(${i.id})">×</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;width:100%">
+        <button class="stock-btn" onclick="adjQty(${i.id},-1)">−</button>
+        <span class="stock-val" style="color:${bajo?'#A32D2D':'var(--sage)'}" onclick="openEdit(${i.id})">${i.qty} ${i.unidad}</span>
+        <button class="stock-btn" onclick="adjQty(${i.id},1)">+</button>
+        <span style="font-size:11px;color:var(--ink-light);margin-left:4px">mín: ${i.min} ${i.unidad}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── PEDIDOS ──
+const ESTADOS=['Diseño','Corte','Ensamblado','Empacado','Listo'];
+const EC={Diseño:'b-rose',Corte:'b-amber',Ensamblado:'b-gray',Empacado:'b-blue',Listo:'b-green',Entregado:'b-green'};
+
+function poblarClientes(){
+  const s=document.getElementById('p-cliente');
+  s.innerHTML='<option value="">-- Sin asignar --</option>'+DB.clientes.map(c=>`<option value="${c.nombre}">${c.nombre}</option>`).join('');
+}
+
+function agregarPedido(){
+  const prod=document.getElementById('p-prod').value.trim();
+  const ent=document.getElementById('p-entrega').value;
+  if(!prod){toast('Describe el producto');return}
+  if(!ent){toast('Selecciona fecha de entrega');return}
+  DB.pedidos.push({
+    id:nxtId++,cliente:document.getElementById('p-cliente').value||'Sin asignar',
+    producto:prod,monto:parseFloat(document.getElementById('p-monto').value)||0,
+    entrega:ent,estado:document.getElementById('p-estado').value,
+    notas:document.getElementById('p-notas').value.trim(),creado:new Date().toISOString()
+  });
+  save('ed3_ped',DB.pedidos);
+  ['p-prod','p-monto','p-notas'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('p-cliente').value='';
+  renderPipeline();renderPedidos();renderInicio();toast('Pedido registrado');
+}
+
+function avanzarPedido(id){
+  const p=DB.pedidos.find(x=>x.id===id);if(!p)return;
+  const idx=ESTADOS.indexOf(p.estado);
+  if(idx<ESTADOS.length-1){p.estado=ESTADOS[idx+1];toast('Pedido → '+p.estado)}
+  else{p.estado='Entregado';toast('Pedido marcado como entregado')}
+  save('ed3_ped',DB.pedidos);renderPipeline();renderPedidos();renderInicio();
+}
+
+function eliminarPedido(id){
+  const p=DB.pedidos.find(x=>x.id===id);
+  confirm2('Eliminar pedido',`¿Eliminar pedido de "${p?.cliente}"?`,()=>{
+    DB.pedidos=DB.pedidos.filter(x=>x.id!==id);
+    save('ed3_ped',DB.pedidos);renderPipeline();renderPedidos();renderInicio();toast('Pedido eliminado');
+  });
+}
+
+function renderPipeHTML(activos){
+  if(!activos.length)return'<div class="empty" style="min-width:200px">Sin pedidos en producción.</div>';
+  return ESTADOS.map(est=>{
+    const items=activos.filter(p=>p.estado===est);
+    return`<div class="pipe-col">
+      <div class="pipe-col-hdr">${est}</div>
+      ${items.length?items.map(p=>`<div class="pipe-card" onclick="avanzarPedido(${p.id})">
+        <div class="pc-name">${p.cliente}</div>
+        <div class="pc-det">${p.producto.slice(0,28)}</div>
+        <div class="pc-det">S/${p.monto} · ${p.entrega}</div>
+      </div>`).join(''):'<div class="pipe-empty">—</div>'}
+    </div>`;
+  }).join('');
+}
+
+function renderPipeline(){
+  const el=document.getElementById('p-pipeline');if(!el)return;
+  const activos=DB.pedidos.filter(p=>p.estado!=='Entregado');
+  el.innerHTML=renderPipeHTML(activos);
+}
+
+function renderPedidos(){
+  const el=document.getElementById('p-list');if(!el)return;
+  if(!DB.pedidos.length){el.innerHTML='<div class="empty">Sin pedidos registrados aún.</div>';return}
+  el.innerHTML=[...DB.pedidos].reverse().map(p=>`
+    <div class="list-item">
+      <div class="li-body">
+        <div class="li-name">${p.cliente}</div>
+        <div class="li-sub">${p.producto}</div>
+        <div class="li-sub" style="margin-top:3px">S/${p.monto} · Entrega: ${p.entrega}</div>
+        ${p.notas?`<div class="li-sub" style="font-style:italic;margin-top:2px">${p.notas}</div>`:''}
+      </div>
+      <div class="li-actions" style="flex-direction:column;gap:5px">
+        <span class="badge ${EC[p.estado]||'b-gray'}">${p.estado}</span>
+        <button class="btn-icon" onclick="eliminarPedido(${p.id})">×</button>
+      </div>
+    </div>`).join('');
+}
+
+// ── CLIENTES ──
+const TC={Familia:'b-rose',Profesor:'b-green',Institución:'b-amber',Empresa:'b-blue',Particular:'b-gray'};
+
+function agregarCliente(){
+  const n=document.getElementById('c-nombre').value.trim();
+  if(!n){toast('Escribe el nombre del cliente');return}
+  DB.clientes.push({
+    id:nxtId++,nombre:n,tipo:document.getElementById('c-tipo').value,
+    tel:document.getElementById('c-tel').value.trim(),dist:document.getElementById('c-dist').value.trim(),
+    fecha:document.getElementById('c-fecha').value.trim(),ig:document.getElementById('c-ig').value.trim(),
+  });
+  save('ed3_cli',DB.clientes);
+  ['c-nombre','c-tel','c-dist','c-fecha','c-ig'].forEach(id=>document.getElementById(id).value='');
+  renderClientes();renderInicio();toast('Cliente guardado');
+}
+
+function eliminarCliente(id){
+  const c=DB.clientes.find(x=>x.id===id);
+  confirm2('Eliminar cliente',`¿Eliminar a "${c?.nombre}"?`,()=>{
+    DB.clientes=DB.clientes.filter(x=>x.id!==id);
+    save('ed3_cli',DB.clientes);renderClientes();renderInicio();toast('Cliente eliminado');
+  });
+}
+
+function renderClientes(){
+  const q=(document.getElementById('c-buscar')||{}).value||'';
+  const el=document.getElementById('c-list');if(!el)return;
+  let items=DB.clientes;
+  if(q)items=items.filter(c=>c.nombre.toLowerCase().includes(q.toLowerCase())||c.dist.toLowerCase().includes(q.toLowerCase()));
+  if(!items.length){el.innerHTML='<div class="empty">Sin clientes aún.</div>';return}
+  el.innerHTML=items.map(c=>`
+    <div class="list-item">
+      <div class="avatar">${c.nombre.slice(0,2).toUpperCase()}</div>
+      <div class="li-body">
+        <div class="li-name">${c.nombre}</div>
+        <div class="li-sub">${c.tel||''}${c.dist?' · '+c.dist:''}</div>
+        ${c.fecha?`<div style="margin-top:4px"><span class="date-chip">${c.fecha}</span></div>`:''}
+        ${c.ig?`<div class="li-sub">${c.ig}</div>`:''}
+      </div>
+      <div class="li-actions" style="flex-direction:column;gap:5px">
+        <span class="badge ${TC[c.tipo]||'b-gray'}">${c.tipo}</span>
+        <button class="btn-icon" onclick="eliminarCliente(${c.id})">×</button>
+      </div>
+    </div>`).join('');
+}
+
+// ── FINANZAS ──
+function curMes(){return new Date().toISOString().slice(0,7)}
+
+function agregarTx(){
+  const desc=document.getElementById('tx-desc').value.trim();
+  const monto=parseFloat(document.getElementById('tx-monto').value);
+  const fecha=document.getElementById('tx-fecha').value;
+  if(!desc){toast('Escribe una descripción');return}
+  if(!monto||monto<=0){toast('Monto inválido');return}
+  if(!fecha){toast('Selecciona una fecha');return}
+  DB.tx.push({id:nxtId++,tipo:document.getElementById('tx-tipo').value,descripcion:desc,monto,fecha});
+  save('ed3_tx',DB.tx);
+  ['tx-desc','tx-monto'].forEach(id=>document.getElementById(id).value='');
+  renderFinanzas();renderInicio();toast('Movimiento registrado');
+}
+
+function eliminarTx(id){
+  DB.tx=DB.tx.filter(x=>x.id!==id);save('ed3_tx',DB.tx);renderFinanzas();renderInicio();toast('Movimiento eliminado');
+}
+
+function renderFinanzas(){
+  const mes=curMes();
+  let ing=0,egr=0;
+  DB.tx.forEach(t=>{if(t.fecha.startsWith(mes)){if(t.tipo==='ingreso')ing+=t.monto;else egr+=t.monto}});
+  document.getElementById('f-ing').textContent='S/ '+ing.toFixed(2);
+  document.getElementById('f-egr').textContent='S/ '+egr.toFixed(2);
+  const gan=ing-egr;
+  const gel=document.getElementById('f-gan');
+  gel.textContent='S/ '+gan.toFixed(2);
+  gel.className='stat-val '+(gan>=0?'v-green':'v-rose');
+  const el=document.getElementById('tx-list');if(!el)return;
+  const txmes=DB.tx.filter(t=>t.fecha.startsWith(mes));
+  if(!txmes.length){el.innerHTML='<div class="empty">Sin movimientos este mes.</div>';return}
+  el.innerHTML=[...txmes].reverse().map(t=>`
+    <div class="list-item">
+      <div class="li-body"><div class="li-name">${t.descripcion}</div><div class="li-sub">${t.fecha}</div></div>
+      <span style="font-weight:700;font-size:14px;color:${t.tipo==='ingreso'?'var(--sage)':'#A32D2D'}">${t.tipo==='ingreso'?'+':'-'}S/${t.monto.toFixed(2)}</span>
+      <button class="btn-icon" onclick="eliminarTx(${t.id})">×</button>
+    </div>`).join('');
+}
+
+// ── IA (Gemini API) ──
+const GEMINI_API_KEY = 'AIzaSyCKGXMoxC2vGmuLp_VLdwWNjlK95lnRKvc'; 
+
+let chatHistory = [];
+
+async function enviar(){
+  const inp=document.getElementById('chat-inp');
+  const q=inp.value.trim();if(!q)return;inp.value='';
+  const msgs=document.getElementById('chat-msgs');
+  
+  chatHistory.push({role:'user', parts:[{text: q}]});
+  msgs.innerHTML+=`<div class="msg user">${q}</div>`;
+  const lid='l'+Date.now();
+  msgs.innerHTML+=`<div class="msg bot" id="${lid}"><div class="dot-anim"><span></span><span></span><span></span></div></div>`;
+  msgs.scrollTop=msgs.scrollHeight;
+
+  const mes=curMes();let ing=0,egr=0;
+  DB.tx.forEach(t=>{if(t.fecha.startsWith(mes)){if(t.tipo==='ingreso')ing+=t.monto;else egr+=t.monto}});
+
+  const inv=DB.inventario.length
+    ?DB.inventario.map(i=>`- ${i.nombre} (${i.cat}): ${i.qty} ${i.unidad}${i.precio?' @ S/'+i.precio:''}${i.qty<=i.min?' [STOCK BAJO — mínimo: '+i.min+']':''}`).join('\n')
+    :'Sin materiales registrados.';
+
+  const peds=DB.pedidos.filter(p=>p.estado!=='Entregado');
+  const pedsStr=peds.length
+    ?peds.map(p=>`- ${p.cliente}: "${p.producto}" | Estado: ${p.estado} | Entrega: ${p.entrega} | S/${p.monto}${p.notas?' | Notas: '+p.notas:''}`).join('\n')
+    :'Sin pedidos activos.';
+
+  const clis=DB.clientes.length
+    ?DB.clientes.map(c=>`- ${c.nombre} (${c.tipo}${c.dist?', '+c.dist:''})${c.fecha?' | Fecha especial: '+c.fecha:''}${c.tel?' | Tel: '+c.tel:''}`).join('\n')
+    :'Sin clientes registrados.';
+
+  const txRec=DB.tx.slice(-12).map(t=>`- ${t.fecha}: ${t.tipo==='ingreso'?'+':'-'}S/${t.monto.toFixed(2)} — ${t.descripcion}`).join('\n')||'Sin movimientos.';
+
+  const sistema=`Eres la asistente inteligente de "Erika's Design", un negocio de papelería creativa, maquetas personalizadas y decoraciones ubicado en Pachacamac, Lima. La dueña es Erika. Responde SIEMPRE en español, con tono amable, cálido y profesional. Sé directa y concisa (máximo 4 oraciones). Usa "soles" o "S/" para precios.
+
+INVENTARIO ACTUAL (datos reales del sistema):
+${inv}
+
+PEDIDOS ACTIVOS (datos reales):
+${pedsStr}
+
+CLIENTES REGISTRADOS:
+${clis}
+
+FINANZAS — Mes actual (${mes}):
+- Ingresos totales: S/${ing.toFixed(2)}
+- Egresos totales: S/${egr.toFixed(2)}
+- Ganancia neta: S/${(ing-egr).toFixed(2)}
+
+Últimos movimientos financieros:
+${txRec}
+
+REGLAS OBLIGATORIAS E INQUEBRANTABLES:
+1. NO INVENTES NADA: Si Erika te pide una idea de diseño o manualidad, GÉNERALA USANDO EXCLUSIVAMENTE los materiales que aparecen en el "INVENTARIO ACTUAL". 
+2. Si un material es absolutamente necesario para una idea y no está en stock, ponlo en una sección al final que diga "Sugerencia de compra externa (Considerar costo logístico)".
+3. Si preguntan por un material específico, dí EXACTAMENTE la cantidad que hay registrada y avisa si el stock está bajo.
+4. Si preguntan por pedidos, cruza la información con los "CLIENTES REGISTRADOS" y menciona el estado actual y fecha de entrega.
+5. Para preguntas de negocio, da consejos prácticos protegiendo siempre el margen de ganancia real.`;
+
+  try{
     if(GEMINI_API_KEY === 'AIzaSyCKGXMoxC2vGmuLp_VLdwWNjlK95lnRKvc') throw new Error("Falta API Key");
 
     const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + GEMINI_API_KEY,{
